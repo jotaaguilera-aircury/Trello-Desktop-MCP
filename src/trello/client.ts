@@ -4,7 +4,9 @@ import type {
   TrelloCredentials, 
   TrelloBoard, 
   TrelloList, 
-  TrelloCard, 
+  TrelloCard,
+  TrelloChecklist,
+  TrelloCheckItem,
   CreateCardRequest,
   UpdateCardRequest,
   MoveCardRequest,
@@ -581,6 +583,28 @@ export class TrelloClient {
       `/cards/${cardId}/checklists`,
       { params },
       `Get checklists for card ${cardId}`
+    );
+  }
+
+  async createChecklist(cardId: string, name: string): Promise<TrelloApiResponse<TrelloChecklist>> {
+    return this.makeRequest<TrelloChecklist>(
+      '/checklists',
+      {
+        method: 'POST',
+        body: JSON.stringify({ idCard: cardId, name })
+      },
+      `Create checklist "${name}" on card ${cardId}`
+    );
+  }
+
+  async addChecklistItem(checklistId: string, name: string): Promise<TrelloApiResponse<TrelloCheckItem>> {
+    return this.makeRequest<TrelloCheckItem>(
+      `/checklists/${checklistId}/checkItems`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ name, pos: 'bottom' })
+      },
+      `Add item to checklist ${checklistId}`
     );
   }
 }

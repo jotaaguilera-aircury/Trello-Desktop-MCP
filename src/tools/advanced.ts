@@ -74,6 +74,21 @@ const validateAddChecklistItems = (args: unknown) => {
   return schema.parse(args);
 };
 
+const validateUpdateChecklistItem = (args: unknown) => {
+  const schema = z.object({
+    apiKey: z.string().min(1, 'API key is required'),
+    token: z.string().min(1, 'Token is required'),
+    cardId: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid card ID format'),
+    checkItemId: z.string().regex(/^[a-f0-9]{24}$/, 'Invalid checklist item ID format'),
+    name: z.string().min(1).optional(),
+    state: z.enum(['complete', 'incomplete']).optional()
+  }).refine(data => data.name !== undefined || data.state !== undefined, {
+    message: 'Provide name and/or state'
+  });
+
+  return schema.parse(args);
+};
+
 const validateGetBoardMembers = (args: unknown) => {
   const schema = z.object({
     apiKey: z.string().min(1, 'API key is required'),
@@ -646,6 +661,91 @@ export async function handleTrelloAddChecklistItems(args: unknown) {
         {
           type: 'text' as const,
           text: `Error adding checklist items: ${errorMessage}`
+        }
+      ],
+      isError: true
+    };
+  }
+}
+
+export const trelloUpdateChecklistItemTool: Tool = {
+  name: 'trello_update_checklist_item',
+  description: 'Rename a checklist item and/or mark it complete or incomplete. Get the item ID from trello_get_card_checklists.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      apiKey: {
+        type: 'string',
+        description: 'Trello API key (automatically provided by Claude.app from your stored credentials)'
+      },
+      token: {
+        type: 'string',
+        description: 'Trello API token (automatically provided by Claude.app from your stored credentials)'
+      },
+      cardId: {
+        type: 'string',
+        description: 'ID of the card the checklist belongs to',
+        pattern: '^[a-f0-9]{24}$'
+      },
+      checkItemId: {
+        type: 'string',
+        description: 'ID of the checklist item to update',
+        pattern: '^[a-f0-9]{24}$'
+      },
+      name: {
+        type: 'string',
+        description: 'Optional: new item text'
+      },
+      state: {
+        type: 'string',
+        enum: ['complete', 'incomplete'],
+        description: 'Optional: new item state'
+      }
+    },
+    required: ['apiKey', 'token', 'cardId', 'checkItemId']
+  }
+};
+
+export async function handleTrelloUpdateChecklistItem(args: unknown) {
+  try {
+    const { apiKey, token, cardId, checkItemId, name, state } = validateUpdateChecklistItem(args);
+    const client = new TrelloClient({ apiKey, token });
+
+    const item = (await client.updateChecklistItem(cardId, checkItemId, {
+      ...(name !== undefined && { name }),
+      ...(state !== undefined && { state })
+    })).data;
+
+    const result = {
+      summary: `Updated checklist item ${item.id}`,
+      cardId,
+      checkItem: {
+        id: item.id,
+        name: item.name,
+        state: item.state
+      }
+    };
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify(result, null, 2)
+        }
+      ]
+    };
+  } catch (error) {
+    const errorMessage = error instanceof z.ZodError
+      ? formatValidationError(error)
+      : error instanceof Error
+        ? error.message
+        : 'Unknown error occurred';
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: `Error updating checklist item: ${errorMessage}`
         }
       ],
       isError: true

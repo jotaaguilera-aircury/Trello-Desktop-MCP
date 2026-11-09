@@ -607,4 +607,19 @@ export class TrelloClient {
       `Add item to checklist ${checklistId}`
     );
   }
+
+  async updateChecklistItem(
+    cardId: string,
+    checkItemId: string,
+    updates: { name?: string; state?: 'complete' | 'incomplete' }
+  ): Promise<TrelloApiResponse<TrelloCheckItem>> {
+    return this.makeRequest<TrelloCheckItem>(
+      `/cards/${cardId}/checkItem/${checkItemId}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(updates)
+      },
+      `Update checklist item ${checkItemId} on card ${cardId}`
+    );
+  }
 }

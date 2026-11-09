@@ -56,6 +56,8 @@ import {
   handleTrelloCreateChecklist,
   trelloAddChecklistItemsTool,
   handleTrelloAddChecklistItems,
+  trelloUpdateChecklistItemTool,
+  handleTrelloUpdateChecklistItem,
   trelloGetBoardMembersTool,
   handleTrelloGetBoardMembers,
   trelloGetBoardLabelsTool,
@@ -121,6 +123,7 @@ export function createMCPServer() {
         trelloGetCardChecklistsTool,
         trelloCreateChecklistTool,
         trelloAddChecklistItemsTool,
+        trelloUpdateChecklistItemTool,
         trelloGetBoardMembersTool,
         trelloGetBoardLabelsTool
       ],
@@ -206,6 +209,9 @@ export function createMCPServer() {
       
       case 'trello_add_checklist_items':
         return await handleTrelloAddChecklistItems(args);
+      
+      case 'trello_update_checklist_item':
+        return await handleTrelloUpdateChecklistItem(args);
       
       case 'trello_get_board_members':
         return await handleTrelloGetBoardMembers(args);
